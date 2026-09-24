@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iptranslator-client"
+dynamic = ["version"]
+description = "Client for the IP.Translator document translation job API: end-to-end encrypted batch translation of .docx documents (X-Wing post-quantum KEM, AES-256-GCM, hybrid-signed key announcements)."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10"
+authors = [{ name = "IP.appify GmbH", email = "support@ipappify.de" }]
+keywords = ["translation", "patent", "document", "e2e", "encryption", "post-quantum", "x-wing", "ml-kem", "docx"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
+]
+dependencies = [
+    # ML-KEM-768 / ML-DSA-65 / X25519 / Ed25519 / AES-GCM — the only runtime dependency
+    "cryptography>=49.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "build>=1.2", "twine>=5"]
+
+[project.urls]
+Homepage = "https://github.com/ipappify/ipt-client-python"
+Repository = "https://github.com/ipappify/ipt-client-python"
+Issues = "https://github.com/ipappify/ipt-client-python/issues"
+Documentation = "https://github.com/ipappify/ipt-client-python#readme"
+
+[project.scripts]
+ipt-client = "iptranslator_client.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+iptranslator_client = ["py.typed"]
+
+[tool.setuptools.dynamic]
+version = { attr = "iptranslator_client._version.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
