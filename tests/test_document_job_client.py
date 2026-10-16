@@ -65,12 +65,20 @@ def test_full_flow_with_optional_inputs(service, client):
     assert result.summary.state == DocumentJobState.done and result.summary.job_id == handle.job_id_wire
 
 
+def test_task_tags_ride_in_the_encrypted_body(service, client):
+    handle = client.submit("a.docx", DOC, "en", "de", text_type="patent", ipc=["g03b", "H04N"])
+    body = service.worker_inputs[str(handle.job_id)]["body"]
+    assert body["text_type"] == "patent" and body["ipc"] == ["G03B", "H04N"]
+    assert "G03B" not in service.jobs[str(handle.job_id)]["submit_json"]  # only inside the encrypted message
+
+
 def test_minimal_submit_has_no_optional_slots(service, client):
     handle = client.submit("a.docx", DOC, "en", "de", finalize=False)
     body = service.worker_inputs[str(handle.job_id)]["body"]
     assert body["doc_finalize"] is False and body["task"] == ""
     assert "doc_dict_url" not in body and "doc_dict_format" not in body and "doc_tm_urls" not in body
     assert "desired_beamwidth" not in body
+    assert "text_type" not in body and "ipc" not in body
     assert service.requests[0]["CreateDocumentJob"] == {"WithDictionary": False, "TranslationMemoryCount": 0}
     assert "DocumentCustomRef" not in service.requests[1]["SubmitDocumentJob"]
     assert client.wait(handle).state == DocumentJobState.done
@@ -178,6 +186,10 @@ def test_argument_validation(client):
         client.submit("a.docx", DOC, "de", "en", translation_memories=[b"x"] * 17)
     with pytest.raises(ValueError):
         client.submit("a.docx", DOC, "", "en")
+    with pytest.raises(ValueError, match="requires text_type"):
+        client.submit("a.docx", DOC, "de", "en", ipc=["G03B"])
+    with pytest.raises(ValueError, match="3 IPC"):
+        client.submit("a.docx", DOC, "de", "en", text_type="patent", ipc=["A01B", "A01C", "A01D", "A01F"])
     with pytest.raises(ValueError):
         DocumentJobClient(client.request_handler, "")
     with pytest.raises(ValueError):

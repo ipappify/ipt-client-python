@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- `DocumentJobClient.submit(..., text_type=..., ipc=[...])` and `ipt-client --type/--ipc`:
+  optional task tags (document type and up to three IPC subclasses) for models trained
+  with them; other models ignore them.
+- Wire enums: request type `predict_ipc`, result type `ipc_predictions`.
+
 ## 2.1.0
 
 Initial release, protocol-identical to

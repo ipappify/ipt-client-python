@@ -82,5 +82,7 @@ def test_usage_errors(service, files, capsys):
     (files / "bad.xwing").write_bytes(b"\x00" * 10)
     assert cli.main(base + [str(files / "bad.xwing")]) == 2
     assert cli.main([str(files / "in.docx"), str(files / "out.docx")]) == 2  # --src/--trg required
+    assert cli.main(base + ["--ipc", "G03B"]) == 2  # --ipc requires --type
+    assert cli.main(base + ["--type", "patent", "--ipc", "A01B,A01C,A01D,A01F"]) == 2
     assert cli.main(["--version"]) == 0
     assert "2." in capsys.readouterr().out

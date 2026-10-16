@@ -54,6 +54,8 @@ The API key falls back to the {API_KEY_ENV_VAR} environment variable.""",
     p.add_argument("-d", "--dictionary", help="dictionary (.csv, .tsv or .xlsx), applied per segment")
     p.add_argument("-m", "--tm", "--translation-memory", dest="tm", action="append", default=[],
                    help=f"translation memory (.tmx); repeat for multiple (max {DocumentJobLimits.MAX_TRANSLATION_MEMORIES})")
+    p.add_argument("--type", dest="text_type", help="document type tag, e.g. patent (models trained with task tags)")
+    p.add_argument("--ipc", help="up to 3 IPC subclasses, comma-separated, e.g. G03B,H04N (requires --type)")
     p.add_argument("-s", "--service-url", default=SERVICE_URL, help=f"service base url (default: {SERVICE_URL})")
     p.add_argument("-k", "--api-key", help=f"api key (default: ${API_KEY_ENV_VAR})")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
@@ -118,6 +120,15 @@ def _validate(args) -> None:
             raise UsageError(f"translation memory '{tm}' does not exist.")
         if os.path.splitext(tm)[1].lower() != ".tmx":
             raise UsageError(f"translation memory '{tm}' must be a .tmx file.")
+    codes = _ipc_codes(args.ipc)
+    if len(codes) > 3:
+        raise UsageError("at most 3 IPC codes are supported.")
+    if codes and not args.text_type:
+        raise UsageError("--ipc requires --type.")
+
+
+def _ipc_codes(value: Optional[str]) -> list:
+    return [code.strip().upper() for code in (value or "").split(",") if code.strip()]
 
 
 def _read(path: str) -> bytes:
@@ -144,7 +155,8 @@ def run(args, cancel_event: threading.Event) -> int:
           + " ...")
     handle = client.submit(document_name, document_bytes, args.src, args.trg, args.finalize,
                            dictionary=dictionary, dictionary_format=dictionary_format,
-                           translation_memories=translation_memories or None)
+                           translation_memories=translation_memories or None,
+                           text_type=args.text_type, ipc=_ipc_codes(args.ipc) or None)
     print(f"job {handle.job_id_wire} submitted.")
 
     def on_progress(status):

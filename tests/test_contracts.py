@@ -75,9 +75,19 @@ def test_request_body_omits_none_and_keeps_empty_lists():
                               "trg_lang": "en", "src_text": [], "doc_finalize": False}
 
 
+def test_request_body_task_tags():
+    body = c.TranslatorRequestBody(scope_key="s", type=c.RequestType.translate_document, src_lang="de",
+                                   trg_lang="en", text_type="patent", ipc=["G03B", "H04N"])
+    assert body.to_json()["text_type"] == "patent" and body.to_json()["ipc"] == ["G03B", "H04N"]
+    # no tags: nothing on the wire
+    body = c.TranslatorRequestBody(scope_key="s", type=c.RequestType.translate_document, src_lang="de", ipc=[])
+    assert "text_type" not in body.to_json() and "ipc" not in body.to_json()
+
+
 def test_wire_enum_names_are_stable():
     assert [m.value for m in c.RequestType] == ["translate", "translate_align", "translate_document", "align",
-                                                "evaluate", "embed", "replace", "split", "probe", "unreadable"]
+                                                "evaluate", "embed", "replace", "split", "predict_ipc", "probe",
+                                                "unreadable"]
     assert [m.value for m in c.DocumentJobState] == ["queued", "running", "done", "failed", "cancelled"]
     assert c.DocumentJobLimits.MAX_TRANSLATION_MEMORIES == 16
     assert c.DocumentJobLimits.DICTIONARY_FORMATS == ("csv", "tsv", "xlsx")

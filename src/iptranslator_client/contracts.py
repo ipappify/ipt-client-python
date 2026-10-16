@@ -35,6 +35,7 @@ class RequestType(str, Enum):
     embed = "embed"
     replace = "replace"
     split = "split"
+    predict_ipc = "predict_ipc"  # IPC subclasses of a document
     probe = "probe"
     unreadable = "unreadable"
 
@@ -47,6 +48,7 @@ class ResultType(str, Enum):
     alignments = "alignments"
     evaluations = "evaluations"
     embeddings = "embeddings"
+    ipc_predictions = "ipc_predictions"  # result of predict_ipc
     status = "status"
     error = "error"
 
@@ -117,6 +119,10 @@ class TranslatorRequestBody:
     trg_lang: Optional[str] = None
     task: Optional[str] = None
     desired_beamwidth: Optional[int] = None
+    # task tags (used by models trained with them, ignored otherwise): the document type
+    # ("patent", ...) and up to three IPC subclasses (4 characters, best first); ipc requires text_type
+    text_type: Optional[str] = None
+    ipc: Optional[list[str]] = None
     src_text: list[str] = field(default_factory=list)
     trg_text: Optional[list[Optional[str]]] = None
     doc_job_id: Optional[str] = None
@@ -139,6 +145,8 @@ class TranslatorRequestBody:
             "desired_beamwidth": self.desired_beamwidth,
             "src_lang": self.src_lang,
             "trg_lang": self.trg_lang,
+            "text_type": self.text_type,
+            "ipc": None if not self.ipc else list(self.ipc),
             "src_text": list(self.src_text),
             "trg_text": None if self.trg_text is None else list(self.trg_text),
             "doc_job_id": self.doc_job_id,

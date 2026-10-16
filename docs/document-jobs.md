@@ -49,6 +49,14 @@ that fail per segment still complete — the summary reports `translated` /
 Both ride their own encrypted blobs under the job key; the server never sees
 their content.
 
+## Document type and IPC codes
+
+`text_type` (e.g. `"patent"`) and `ipc` (up to three IPC subclasses such as
+`"G03B"`, best first) tell the model what kind of document it translates. They
+travel inside the encrypted job message and apply to every segment. `ipc`
+requires `text_type`. Models that were not trained with these tags ignore them,
+so they can always be sent. On the command line: `--type patent --ipc G03B,H04N`.
+
 ## Finalize
 
 `finalize=True` asks the worker to produce a finished document (unwrap the

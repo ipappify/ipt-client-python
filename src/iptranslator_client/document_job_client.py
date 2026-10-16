@@ -21,6 +21,10 @@ from .request_handler import CLIENT_NAME, WebApiRequestHandler, raise_on_error
 from .transport import Transport
 
 
+# task tags: at most this many IPC subclasses per job (mirrors the service)
+MAX_IPC_CODES = 3
+
+
 @dataclass(frozen=True)
 class DocumentJobHandle:
     job_id: uuid.UUID
@@ -89,7 +93,8 @@ class DocumentJobClient:
                finalize: bool = True, task: str | None = None, beam_width: int | None = None,
                document_custom_ref: str | None = None,
                dictionary: bytes | None = None, dictionary_format: str | None = None,
-               translation_memories: Sequence[bytes] | None = None) -> DocumentJobHandle:
+               translation_memories: Sequence[bytes] | None = None,
+               text_type: str | None = None, ipc: Sequence[str] | None = None) -> DocumentJobHandle:
         """Create a job, upload the encrypted document, and submit the encrypted
         job message. Returns the handle for polling / fetching.
 
@@ -99,6 +104,9 @@ class DocumentJobClient:
         optional csv/tsv/xlsx file (``dictionary_format`` required with it);
         ``translation_memories`` are optional TMX files — exact source matches
         are applied directly (unbilled), the rest becomes translation context.
+        ``text_type`` (``"patent"``, ...) and ``ipc`` (up to three IPC subclasses
+        such as ``"G03B"``, best first; require ``text_type``) are optional task tags
+        for models trained with them (other models ignore them).
         """
         if not document_bytes:
             raise ValueError("document_bytes required")
@@ -111,6 +119,11 @@ class DocumentJobClient:
             raise ValueError(f"At most {DocumentJobLimits.MAX_TRANSLATION_MEMORIES} translation memories are supported")
         if not source_language or not target_language:
             raise ValueError("source_language and target_language are required")
+        ipc = [code.strip().upper() for code in (ipc or []) if code and code.strip()]
+        if len(ipc) > MAX_IPC_CODES:
+            raise ValueError(f"At most {MAX_IPC_CODES} IPC codes are supported")
+        if ipc and not text_type:
+            raise ValueError("ipc requires text_type")
 
         # 1. create: job id + SAS URLs (incl. the optional-input slots)
         created = self._send(EnvelopeRequest(create_document_job=CreateDocumentJobRequest(
@@ -163,6 +176,8 @@ class DocumentJobClient:
             doc_dict_format=dictionary_format if dictionary is not None else None,
             doc_tm_urls=list(created.worker_translation_memory_urls[:len(translation_memories)])
             if translation_memories else None,
+            text_type=text_type or None,
+            ipc=ipc or None,
         )
         # correlation contract: request_id == JobId ("N")
         message = self.message_handler.build_request(body, job_id_wire)
