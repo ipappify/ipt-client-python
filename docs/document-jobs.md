@@ -55,7 +55,8 @@ their content.
 `"G03B"`, best first) tell the model what kind of document it translates. They
 travel inside the encrypted job message and apply to every segment. `ipc`
 requires `text_type`. Models that were not trained with these tags ignore them,
-so they can always be sent. On the command line: `--type patent --ipc G03B,H04N`.
+so they can always be sent. Without `text_type`, models trained with these tags use
+`"patent"`. On the command line: `--type patent --ipc G03B,H04N`.
 
 ## Finalize
 
